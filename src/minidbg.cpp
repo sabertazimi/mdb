@@ -91,7 +91,6 @@ int main(int argc, char* argv[]) {
     if (pid == 0) {
         // child
         execute_debugee(prog);
-
     } else if (pid >= 1) {
         // parent
         Debugger dbg{prog, pid};
