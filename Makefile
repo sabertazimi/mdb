@@ -8,7 +8,7 @@ MKDIR := mkdir -p
 TEST  := hello
 MAIN  := minidbg
 
-.PHONY: clean test debug
+.PHONY: clean run test debug
 
 all: ./build/Makefile
 	@ $(MAKE) -C build
@@ -25,6 +25,9 @@ clean:
 	@- $(RM) ./build/cmake.*
 	@- $(RM) ./build/*.cmake
 	@- $(RM) ./build/*.txt
+
+run:
+	make test
 
 test:
 	@ cd ./build && ./$(MAIN) $(TEST)

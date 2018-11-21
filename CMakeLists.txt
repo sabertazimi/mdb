@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 project (MiniDbg)
 
-add_compile_options(-std=c++14 -Wall -Wextra -Wno-unused-variable)
+add_compile_options(-std=c++14 -Wall -Wextra -Wno-unused-variable -g)
 
 include_directories(lib/libelfin lib/linenoise include)
 add_executable(minidbg src/minidbg.cpp lib/linenoise/linenoise.c)

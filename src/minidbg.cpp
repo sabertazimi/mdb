@@ -1,9 +1,9 @@
 #include <vector>
+#include <sstream>
+#include <iostream>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <sstream>
-#include <iostream>
 
 #include "linenoise.h"
 
@@ -30,13 +30,21 @@ bool is_prefix(const std::string& s, const std::string& of) {
 
 void debugger::handle_command(const std::string& line) {
     auto args = split(line,' ');
-    auto command = args[0];
 
-    if (is_prefix(command, "cont")) {
+    if (args.empty()) {
         continue_execution();
-    }
-    else {
-        std::cerr << "Unknown command\n";
+    } else {
+        auto command = args.front();
+
+        if (is_prefix(command, "cont")
+            || command == "c"
+            || command == "run"
+            || command == "r"
+        ) {
+            continue_execution();
+        } else {
+            std::cerr << "Unknown command\n";
+        }
     }
 }
 
