@@ -4,9 +4,15 @@ addons:
   apt:
     sources:
       - george-edison55-precise-backports
+      - ubuntu-toolchain-r-test
     packages:
       - cmake-data
       - cmake
+      - g++-7
+
+env:
+  - CC=gcc-7
+  - CXX=g++-7
 
 script:
   - make
