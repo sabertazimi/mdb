@@ -5,8 +5,10 @@
 SHELL := /bin/bash
 RM    := rm -rf
 MKDIR := mkdir -p
+TEST  := hello
+MAIN  := minidbg
 
-.PHONY: clean
+.PHONY: clean test debug
 
 all: ./build/Makefile
 	@ $(MAKE) -C build
@@ -23,6 +25,12 @@ clean:
 	@- $(RM) ./build/cmake.*
 	@- $(RM) ./build/*.cmake
 	@- $(RM) ./build/*.txt
+
+test:
+	@ cd ./build && ./$(MAIN) $(TEST)
+
+debug:
+	@ cd ./build && gdb --args $(MAIN) $(TEST)
 
 ifeq ($(findstring clean,$(MAKECMDGOALS)),)
 	$(MAKECMDGOALS): ./build/Makefile
