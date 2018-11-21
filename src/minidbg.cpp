@@ -7,7 +7,8 @@
 
 #include "linenoise.h"
 
-#include "debugger.hpp"
+#include "breakpoint.hpp"
+#include "debugger.h"
 
 using namespace minidbg;
 
@@ -28,7 +29,7 @@ bool is_prefix(const std::string& s, const std::string& of) {
     return std::equal(s.begin(), s.end(), of.begin());
 }
 
-void debugger::handle_command(const std::string& line) {
+void Debugger::handle_command(const std::string& line) {
     auto args = split(line,' ');
 
     if (args.empty()) {
@@ -48,20 +49,20 @@ void debugger::handle_command(const std::string& line) {
     }
 }
 
-void debugger::run() {
+void Debugger::run() {
     int wait_status;
     auto options = 0;
     waitpid(m_pid, &wait_status, options);
 
     char* line = nullptr;
-    while((line = linenoise("minidbg> ")) != nullptr) {
+    while ((line = linenoise("minidbg> ")) != nullptr) {
         handle_command(line);
         linenoiseHistoryAdd(line);
         linenoiseFree(line);
     }
 }
 
-void debugger::continue_execution() {
+void Debugger::continue_execution() {
     ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
 
     int wait_status;
@@ -74,6 +75,7 @@ void execute_debugee (const std::string& prog_name) {
         std::cerr << "Error in ptrace\n";
         return;
     }
+
     execl(prog_name.c_str(), prog_name.c_str(), nullptr);
 }
 
@@ -87,14 +89,12 @@ int main(int argc, char* argv[]) {
 
     auto pid = fork();
     if (pid == 0) {
-        //child
+        // child
         execute_debugee(prog);
 
-    }
-    else if (pid >= 1)  {
-        //parent
-        debugger dbg{prog, pid};
+    } else if (pid >= 1) {
+        // parent
+        Debugger dbg{prog, pid};
         dbg.run();
     }
 }
-
