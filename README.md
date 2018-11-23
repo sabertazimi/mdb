@@ -39,12 +39,6 @@ if (request == PTRACE_TRACEME) {
 }
 ```
 
-## DWARF
-
-DWARF is a widely used, standardized debugging data format.
-DWARF was originally designed along with Executable and Linkable Format (ELF),
-although it is independent of object file formats.
-
 ## Breakpoints
 
 When the processor executes the `int 3` instruction,
@@ -63,6 +57,33 @@ which is encoded as 0xcc to implement software breakpoints.
 
 - register address/value in `<sys/user.h>`: `struct user_regs_struct`
 - ptrace api: `ptrace(PTRACE_GETREGS, pid, nullptr, &regs);`
+
+## DWARF Debugging Format
+
+- [ELF Format](http://www.skyfree.org/linux/references/ELF_Format.pdf)
+- [DWARF Format](http://www.dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf)
+
+DWARF is a widely used, standardized debugging data format.
+DWARF was originally designed along with Executable and Linkable Format (ELF),
+although it is independent of object file formats.
+
+- .debug_abbrev Abbreviations used in the .debug_info section
+- .debug_aranges A mapping between memory address and compilation
+- .debug_frame Call Frame Information
+- .debug_info The core DWARF data containing DWARF Information Entries (DIEs)
+- .debug_line Line Number Program
+- .debug_loc Location descriptions
+- .debug_macinfo Macro descriptions
+- .debug_pubnames A lookup table for global objects and functions
+- .debug_pubtypes A lookup table for global types
+- .debug_ranges Address ranges referenced by DIEs
+- .debug_str String table used by .debug_info
+- .debug_types Type descriptions
+
+```bash
+# compile with `-g` flag
+dwarfdump a.out
+```
 
 ## Reference
 
