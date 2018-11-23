@@ -24,11 +24,6 @@ std::vector<std::string> split(const std::string &s, char delimiter) {
     return out;
 }
 
-bool is_prefix(const std::string& s, const std::string& of) {
-    if (s.size() > of.size()) return false;
-    return std::equal(s.begin(), s.end(), of.begin());
-}
-
 void Debugger::handle_command(const std::string& line) {
     auto args = split(line,' ');
 
@@ -36,9 +31,9 @@ void Debugger::handle_command(const std::string& line) {
         continue_execution();
     } else {
         auto command = args.front();
-        if (is_prefix(command, "cont") || is_alias(command, "continue")) {
+        if (is_alias(command, "continue")) {
             continue_execution();
-        } else if (is_prefix(command, "break") || is_alias(command, "break")) {
+        } else if (is_alias(command, "break")) {
             std::string addr {args[1], 2}; // remove "0x" prefix
             set_breakpoint_at_address(std::stol(addr, 0, 16));
         } else {

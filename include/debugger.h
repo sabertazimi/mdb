@@ -21,10 +21,13 @@ namespace minidbg {
     private:
         inline void init(void) {
             this->set_alias("c", "continue");
+            this->set_alias("cont", "continue");
             this->set_alias("r", "continue");
             this->set_alias("run", "continue");
+            this->set_alias("continue", "continue");
 
             this->set_alias("b", "break");
+            this->set_alias("break", "break");
         }
 
         inline bool is_alias(const std::string& input, const std::string& command) {
