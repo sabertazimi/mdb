@@ -16,6 +16,7 @@ Meanwhile, debugger can use:
 - `PEEKDATA`: memory data
 - `PEEKTEXT`
 - `PEEKSIGINFO`
+- `GETREGS`: registers info
 
 to get data of traced process,
 `ptrace(PTRACE_POKEUSER)` or `POKEDATA` or `POKETEXT`
@@ -49,6 +50,11 @@ call `waitpid` and wait until the `SIGTRAP` occurs.
 Replace the instruction which is currently
 at the given address with an int 3 instruction,
 which is encoded as 0xcc to implement software breakpoints.
+
+## Registers
+
+- defination in `<sys/user.h>`
+- ptrace api: `ptrace(PTRACE_GETREGS, pid, nullptr, &regs);`
 
 ## Reference
 
