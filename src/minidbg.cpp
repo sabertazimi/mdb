@@ -36,21 +36,9 @@ void Debugger::handle_command(const std::string& line) {
         continue_execution();
     } else {
         auto command = args.front();
-
-        // @TODO: use unordered_map to manage alias command
-        // map(command, "continue") == true
-        // is_alias(command, "continue") == true
-        // set_map(command, "continue")
-        // set_alias(commnad, "continue")
-        if (is_prefix(command, "cont")
-            || command == "c"
-            || command == "run"
-            || command == "r"
-        ) {
+        if (is_prefix(command, "cont") || is_alias(command, "continue")) {
             continue_execution();
-        } else if (is_prefix(command, "break")
-            || command == "b"
-        ) {
+        } else if (is_prefix(command, "break") || is_alias(command, "break")) {
             std::string addr {args[1], 2}; // remove "0x" prefix
             set_breakpoint_at_address(std::stol(addr, 0, 16));
         } else {
