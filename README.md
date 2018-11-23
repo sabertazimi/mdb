@@ -39,6 +39,12 @@ if (request == PTRACE_TRACEME) {
 }
 ```
 
+## DWARF
+
+DWARF is a widely used, standardized debugging data format.
+DWARF was originally designed along with Executable and Linkable Format (ELF),
+although it is independent of object file formats.
+
 ## Breakpoints
 
 When the processor executes the `int 3` instruction,

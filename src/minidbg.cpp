@@ -1,13 +1,16 @@
-#include <vector>
-#include <sstream>
-#include <iostream>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+#include <vector>
+
 #include "linenoise.h"
 
 #include "breakpoint.hpp"
+#include "registers.hpp"
 #include "debugger.h"
 
 using namespace minidbg;
@@ -36,9 +39,26 @@ void Debugger::handle_command(const std::string& line) {
         } else if (is_alias(command, "break")) {
             std::string addr {args[1], 2}; // remove "0x" prefix
             set_breakpoint_at_address(std::stol(addr, 0, 16));
+        } else if (is_alias(command, "register")) {
+            if (is_alias(args[1], "dump")) {
+                dump_registers();
+            } else if (is_alias(args[1], "read")) {
+                std::cout << get_register_value(m_pid, get_register_from_name(args[2])) << std::endl;
+            } else if (is_alias(args[1], "write")) {
+                std::string val {args[3], 2}; //assume 0xVAL
+                set_register_value(m_pid, get_register_from_name(args[2]), std::stol(val, 0, 16));
+            }
         } else {
             std::cerr << "Unknown command\n";
         }
+    }
+}
+
+void Debugger::dump_registers() {
+    for (const auto& rd : g_register_descriptors) {
+        std::cout << rd.name << " 0x"
+                  << std::setfill('0') << std::setw(16) << std::hex
+                  << get_register_value(m_pid, rd.r) << std::endl;
     }
 }
 

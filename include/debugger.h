@@ -15,6 +15,7 @@ namespace minidbg {
             this->init();
         }
 
+        void dump_registers();
         void set_breakpoint_at_address(std::intptr_t addr);
         void run();
 
@@ -22,12 +23,19 @@ namespace minidbg {
         inline void init(void) {
             this->set_alias("c", "continue");
             this->set_alias("cont", "continue");
-            this->set_alias("r", "continue");
-            this->set_alias("run", "continue");
             this->set_alias("continue", "continue");
 
             this->set_alias("b", "break");
             this->set_alias("break", "break");
+
+            this->set_alias("reg", "register");
+            this->set_alias("register", "register");
+            this->set_alias("d", "dump");
+            this->set_alias("dump", "dump");
+            this->set_alias("r", "read");
+            this->set_alias("read", "read");
+            this->set_alias("w", "write");
+            this->set_alias("write", "write");
         }
 
         inline bool is_alias(const std::string& input, const std::string& command) {
