@@ -64,7 +64,7 @@ void Debugger::handle_command(const std::string& line) {
                 std::string val {args[3], 2};   // assume 0xVAL
                 set_register_value(m_pid, get_register_from_name(args[2]), std::stol(val, 0, 16));
             }
-        }  else if(is_alias(command, "memory")) {
+        } else if (is_alias(command, "memory")) {
             std::string addr {args[2], 2};      // assume 0xADDRESS
 
             if (is_alias(args[1], "read")) {
@@ -73,6 +73,16 @@ void Debugger::handle_command(const std::string& line) {
                 std::string val {args[3], 2};   // assume 0xVAL
                 write_memory(std::stol(addr, 0, 16), std::stol(val, 0, 16));
             }
+        } else if (is_alias(command, "stepin")) {
+            single_step_instruction_with_breakpoint_check();
+            auto line_entry = get_line_entry_from_pc(get_pc());
+            print_source(line_entry->file->path, line_entry->line);
+        } else if (is_alias(command, "step")) {
+            step_in();
+        } else if (is_alias(command, "next")) {
+            step_over();
+        } else if (is_alias(command, "stepout")) {
+            step_out();
         } else {
             std::cerr << "Unknown command\n";
         }
@@ -102,6 +112,34 @@ void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
     m_breakpoints[addr] = bp;
 }
 
+void Debugger::set_breakpoint_at_function(const std::string& name) {
+    for (const auto& cu : m_dwarf.compilation_units()) {
+        for (const auto& die : cu.root()) {
+            if (die.has(dwarf::DW_AT::name) && at_name(die) == name) {
+                auto low_pc = at_low_pc(die);
+                auto entry = get_line_entry_from_pc(low_pc);
+                ++entry; // skip prologue
+                set_breakpoint_at_address(entry->address);
+            }
+        }
+    }
+}
+
+void Debugger::set_breakpoint_at_source_line(const std::string& file, unsigned line) {
+    for (const auto& cu : m_dwarf.compilation_units()) {
+        if (is_suffix(file, at_name(cu.root()))) {
+            const auto& lt = cu.get_line_table();
+
+            for (const auto& entry : lt) {
+                if (entry.is_stmt && entry.line == line) {
+                    set_breakpoint_at_address(entry.address);
+                    return;
+                }
+            }
+        }
+    }
+}
+
 void Debugger::single_step_instruction() {
     ptrace(PTRACE_SINGLESTEP, m_pid, nullptr, nullptr);
     wait_for_signal();
@@ -113,6 +151,76 @@ void Debugger::single_step_instruction_with_breakpoint_check() {
         step_over_breakpoint();
     } else {
         single_step_instruction();
+    }
+}
+
+void Debugger::step_out() {
+    auto frame_pointer = get_register_value(m_pid, reg::rbp);
+    auto return_address = read_memory(frame_pointer+8);
+
+    bool should_remove_breakpoint = false;
+    if (!m_breakpoints.count(return_address)) {
+        set_breakpoint_at_address(return_address);
+        should_remove_breakpoint = true;
+    }
+
+    continue_execution();
+
+    if (should_remove_breakpoint) {
+        remove_breakpoint(return_address);
+    }
+}
+
+void Debugger::remove_breakpoint(std::intptr_t addr) {
+    if (m_breakpoints.at(addr).is_enabled()) {
+        m_breakpoints.at(addr).disable();
+    }
+    m_breakpoints.erase(addr);
+}
+
+void Debugger::step_in() {
+   auto line = get_line_entry_from_pc(get_pc())->line;
+
+    while (get_line_entry_from_pc(get_pc())->line == line) {
+        single_step_instruction_with_breakpoint_check();
+    }
+
+    auto line_entry = get_line_entry_from_pc(get_pc());
+    print_source(line_entry->file->path, line_entry->line);
+}
+
+void Debugger::step_over() {
+    auto func = get_function_from_pc(get_pc());
+    auto func_entry = at_low_pc(func);
+    auto func_end = at_high_pc(func);
+
+    auto line = get_line_entry_from_pc(func_entry);
+    auto start_line = get_line_entry_from_pc(get_pc());
+
+    std::vector<std::intptr_t> to_delete{};
+
+    // just set a breakpoint at every line in the current function
+    // then step in (must jump to next source line as every line has a breakpoint)
+    // finally, remove added breakpoints
+    while (line->address < func_end) {
+        if (line->address != start_line->address && !m_breakpoints.count(line->address)) {
+            set_breakpoint_at_address(line->address);
+            to_delete.push_back(line->address);
+        }
+        ++line;
+    }
+
+    auto frame_pointer = get_register_value(m_pid, reg::rbp);
+    auto return_address = read_memory(frame_pointer+8);
+    if (!m_breakpoints.count(return_address)) {
+        set_breakpoint_at_address(return_address);
+        to_delete.push_back(return_address);
+    }
+
+    continue_execution();
+
+    for (auto addr : to_delete) {
+        remove_breakpoint(addr);
     }
 }
 
@@ -260,6 +368,16 @@ inline void Debugger::init() {
 
     this->set_alias("b", "break");
     this->set_alias("break", "break");
+    this->set_alias("s", "step");
+    this->set_alias("step", "step");
+    this->set_alias("n", "next");
+    this->set_alias("next", "next");
+    this->set_alias("si", "stepin");
+    this->set_alias("stepi", "stepin");
+    this->set_alias("stepin", "stepin");
+    this->set_alias("so", "stepout");
+    this->set_alias("stepo", "stepout");
+    this->set_alias("stepout", "stepout");
 
     this->set_alias("reg", "register");
     this->set_alias("register", "register");
