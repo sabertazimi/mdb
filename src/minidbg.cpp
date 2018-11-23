@@ -37,16 +37,33 @@ void Debugger::handle_command(const std::string& line) {
     } else {
         auto command = args.front();
 
+        // @TODO: use unordered_map to manage alias command
+        // map(command, "continue") == true
+        // is_alias(command, "continue") == true
+        // set_map(command, "continue")
+        // set_alias(commnad, "continue")
         if (is_prefix(command, "cont")
             || command == "c"
             || command == "run"
             || command == "r"
         ) {
             continue_execution();
+        } else if (is_prefix(command, "break")
+            || command == "b"
+        ) {
+            std::string addr {args[1], 2}; // remove "0x" prefix
+            set_breakpoint_at_address(std::stol(addr, 0, 16));
         } else {
             std::cerr << "Unknown command\n";
         }
     }
+}
+
+void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
+    std::cout << "Set breakpoint at address 0x" << std::hex << addr << std::endl;
+    BreakPoint bp {m_pid, addr};
+    bp.enable();
+    m_breakpoints[addr] = bp;
 }
 
 void Debugger::run() {

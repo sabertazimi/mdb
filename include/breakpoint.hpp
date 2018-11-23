@@ -20,7 +20,13 @@ namespace minidbg {
             m_enabled = true;
         }
 
-        void disable();
+        void disable() {
+            auto data = ptrace(PTRACE_PEEKDATA, m_pid, m_addr, nullptr);
+            auto restored_data = ((data & ~0xff) | m_saved_data);
+            ptrace(PTRACE_POKEDATA, m_pid, m_addr, restored_data);
+
+            m_enabled = false;
+        }
 
         auto is_enabled() const -> bool { return m_enabled; }
         auto get_address() const -> std::intptr_t { return m_addr; }
