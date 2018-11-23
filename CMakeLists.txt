@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project (MiniDbg)
 
 add_compile_options(-Wall -Wextra)
-set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++14 -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 message(STATUS "optional:-std=c++14")   
 
 include_directories(lib/libelfin lib/linenoise include)

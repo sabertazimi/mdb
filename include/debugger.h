@@ -7,6 +7,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "dwarf/dwarf++.hh"
+#include "elf/elf++.hh"
+
 #include <breakpoint.hpp>
 
 namespace minidbg {
