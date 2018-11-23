@@ -239,7 +239,7 @@ void Debugger::print_source(const std::string& file_name, unsigned line, unsigne
     std::cout << std::endl;
 }
 
-inline void Debugger::init(void) {
+inline void Debugger::init() {
     this->set_alias("c", "continue");
     this->set_alias("cont", "continue");
     this->set_alias("continue", "continue");
