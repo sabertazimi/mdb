@@ -37,12 +37,15 @@ namespace minidbg {
         auto get_pc() -> uint64_t;
         void set_pc(uint64_t pc);
         void step_over_breakpoint();
-        void wait_for_signal();
 
+        void wait_for_signal();
+        auto get_signal_info() -> siginfo_t;
         void handle_sigtrap(siginfo_t info);
 
         auto get_function_from_pc(uint64_t pc) -> dwarf::die;
         auto get_line_entry_from_pc(uint64_t pc) -> dwarf::line_table::iterator;
+
+        void print_source(const std::string& file_name, unsigned line, unsigned n_lines_context=2);
 
         inline void init(void);
         inline auto is_alias(const std::string& input, const std::string& command) -> bool;
