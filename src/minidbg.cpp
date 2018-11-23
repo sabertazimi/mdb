@@ -27,6 +27,19 @@ std::vector<std::string> split(const std::string &s, char delimiter) {
     return out;
 }
 
+void Debugger::run() {
+    int wait_status;
+    auto options = 0;
+    waitpid(m_pid, &wait_status, options);
+
+    char* line = nullptr;
+    while ((line = linenoise("minidbg> ")) != nullptr) {
+        handle_command(line);
+        linenoiseHistoryAdd(line);
+        linenoiseFree(line);
+    }
+}
+
 void Debugger::handle_command(const std::string& line) {
     auto args = split(line,' ');
 
@@ -54,12 +67,12 @@ void Debugger::handle_command(const std::string& line) {
     }
 }
 
-void Debugger::dump_registers() {
-    for (const auto& rd : g_register_descriptors) {
-        std::cout << rd.name << " 0x"
-                  << std::setfill('0') << std::setw(16) << std::hex
-                  << get_register_value(m_pid, rd.r) << std::endl;
-    }
+void Debugger::continue_execution() {
+    ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
+
+    int wait_status;
+    auto options = 0;
+    waitpid(m_pid, &wait_status, options);
 }
 
 void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
@@ -69,25 +82,40 @@ void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
     m_breakpoints[addr] = bp;
 }
 
-void Debugger::run() {
-    int wait_status;
-    auto options = 0;
-    waitpid(m_pid, &wait_status, options);
-
-    char* line = nullptr;
-    while ((line = linenoise("minidbg> ")) != nullptr) {
-        handle_command(line);
-        linenoiseHistoryAdd(line);
-        linenoiseFree(line);
+void Debugger::dump_registers() {
+    for (const auto& rd : g_register_descriptors) {
+        std::cout << rd.name << " 0x"
+                  << std::setfill('0') << std::setw(16) << std::hex
+                  << get_register_value(m_pid, rd.r) << std::endl;
     }
 }
 
-void Debugger::continue_execution() {
-    ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
+inline void Debugger::init(void) {
+    this->set_alias("c", "continue");
+    this->set_alias("cont", "continue");
+    this->set_alias("continue", "continue");
 
-    int wait_status;
-    auto options = 0;
-    waitpid(m_pid, &wait_status, options);
+    this->set_alias("b", "break");
+    this->set_alias("break", "break");
+
+    this->set_alias("reg", "register");
+    this->set_alias("register", "register");
+
+    this->set_alias("d", "dump");
+    this->set_alias("dump", "dump");
+    this->set_alias("r", "read");
+    this->set_alias("read", "read");
+    this->set_alias("w", "write");
+    this->set_alias("write", "write");
+}
+
+inline bool Debugger::is_alias(const std::string& input, const std::string& command) {
+    auto alias = m_aliases.find(input);
+    return (alias != m_aliases.end() && alias->second == command);
+}
+
+inline void Debugger::set_alias(const std::string& input, const std::string& command) {
+    m_aliases[input] = command;
 }
 
 void execute_debugee (const std::string& prog_name) {
