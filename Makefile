@@ -8,7 +8,7 @@ MKDIR := mkdir -p
 TEST  := hello
 MAIN  := minidbg
 
-.PHONY: clean run test debug
+.PHONY: clean run dump test debug
 
 all: ./build/Makefile
 	@ $(MAKE) -C build
@@ -31,6 +31,9 @@ clean:
 
 run:
 	make test
+
+dump:
+	@  dwarfdump ./build/$(TEST) > .dwarfdump
 
 test:
 	@ cd ./build && ./$(MAIN) $(TEST)
