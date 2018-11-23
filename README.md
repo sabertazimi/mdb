@@ -85,6 +85,38 @@ although it is independent of object file formats.
 dwarfdump a.out
 ```
 
+### debug_line
+
+`NS` means that the address marks the beginning of a new statement,
+which is often used for setting breakpoints or stepping.
+`PE` marks the end of the function prologue,
+which is helpful for setting function entry breakpoints.
+`ET` marks the end of the translation unit.
+
+### debug_info
+
+The `.debug_info` section is the heart of DWARF.
+It gives us information about the types, functions, variables.
+A DIE consists of a tag telling you what kind of source-level entity is being represented,
+followed by a series of attributes which apply to that entity.
+
+The first DIE represents a compilation unit (CU),
+which is essentially a source file with all of the `#includes` and such resolved.
+
+we have a program counter value and want to figure out what function we’re in:
+
+```cpp
+for each compile unit:
+    if the pc is between DW_AT_low_pc and DW_AT_high_pc:
+        for each function in the compile unit:
+            if the pc is between DW_AT_low_pc and DW_AT_high_pc:
+                return function information
+```
+
+function breakpoints:
+lookup the value of DW_AT_low_pc in the line table,
+then keep reading until you get to the entry marked as the prologue end.
+
 ## Reference
 
 - [minidbg](https://github.com/sabertazimi/mdb)
