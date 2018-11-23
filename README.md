@@ -1,5 +1,7 @@
 # mdb
 
+[![Build Status](https://travis-ci.org/sabertazimi/mdb.svg?branch=master)](https://travis-ci.org/sabertazimi/mdb)
+
 Minimal debugger
 
 ## ptrace
