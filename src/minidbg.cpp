@@ -50,7 +50,7 @@ void Debugger::handle_command(const std::string& line) {
         if (is_alias(command, "continue")) {
             continue_execution();
         } else if (is_alias(command, "break")) {
-            std::string addr {args[1], 2}; // remove "0x" prefix
+            std::string addr {args[1], 2}; // assume 0xADDRESS (remove "0x" prefix)
             set_breakpoint_at_address(std::stol(addr, 0, 16));
         } else if (is_alias(command, "register")) {
             if (is_alias(args[1], "dump")) {
@@ -58,21 +58,22 @@ void Debugger::handle_command(const std::string& line) {
             } else if (is_alias(args[1], "read")) {
                 std::cout << get_register_value(m_pid, get_register_from_name(args[2])) << std::endl;
             } else if (is_alias(args[1], "write")) {
-                std::string val {args[3], 2}; //assume 0xVAL
+                std::string val {args[3], 2};   // assume 0xVAL
                 set_register_value(m_pid, get_register_from_name(args[2]), std::stol(val, 0, 16));
+            }
+        }  else if(is_alias(command, "memory")) {
+            std::string addr {args[2], 2};      // assume 0xADDRESS
+
+            if (is_alias(args[1], "read")) {
+                std::cout << std::hex << read_memory(std::stol(addr, 0, 16)) << std::endl;
+            } else if (is_alias(args[1], "write")) {
+                std::string val {args[3], 2};   // assume 0xVAL
+                write_memory(std::stol(addr, 0, 16), std::stol(val, 0, 16));
             }
         } else {
             std::cerr << "Unknown command\n";
         }
     }
-}
-
-void Debugger::continue_execution() {
-    ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
-
-    int wait_status;
-    auto options = 0;
-    waitpid(m_pid, &wait_status, options);
 }
 
 void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
@@ -90,6 +91,54 @@ void Debugger::dump_registers() {
     }
 }
 
+uint64_t Debugger::read_memory(uint64_t address) {
+    return ptrace(PTRACE_PEEKDATA, m_pid, address, nullptr);
+}
+
+void Debugger::write_memory(uint64_t address, uint64_t value) {
+    ptrace(PTRACE_POKEDATA, m_pid, address, value);
+}
+
+void Debugger::continue_execution() {
+    step_over_breakpoint();
+    ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
+    wait_for_signal();
+}
+
+uint64_t Debugger::get_pc() {
+    return get_register_value(m_pid, reg::rip);
+}
+
+void Debugger::set_pc(uint64_t pc) {
+    set_register_value(m_pid, reg::rip, pc);
+}
+
+void Debugger::step_over_breakpoint() {
+    // - 1 because execution will go past the breakpoint
+    auto possible_breakpoint_location = get_pc() - 1;
+
+    if (m_breakpoints.count(possible_breakpoint_location)) {
+        auto& bp = m_breakpoints[possible_breakpoint_location];
+
+        if (bp.is_enabled()) {
+            auto previous_instruction_address = possible_breakpoint_location;
+            set_pc(previous_instruction_address);
+
+            bp.disable();
+            ptrace(PTRACE_SINGLESTEP, m_pid, nullptr, nullptr);
+            wait_for_signal();
+            bp.enable();
+        }
+    }
+}
+
+void Debugger::wait_for_signal() {
+    int wait_status;
+    auto options = 0;
+    waitpid(m_pid, &wait_status, options);
+}
+
+
 inline void Debugger::init(void) {
     this->set_alias("c", "continue");
     this->set_alias("cont", "continue");
@@ -100,6 +149,8 @@ inline void Debugger::init(void) {
 
     this->set_alias("reg", "register");
     this->set_alias("register", "register");
+    this->set_alias("mem", "memory");
+    this->set_alias("memory", "memory");
 
     this->set_alias("d", "dump");
     this->set_alias("dump", "dump");

@@ -23,6 +23,12 @@ namespace minidbg {
         void continue_execution();        
         void set_breakpoint_at_address(std::intptr_t addr);
         void dump_registers();
+        auto read_memory(uint64_t address) -> uint64_t;
+        void write_memory(uint64_t address, uint64_t value);
+        auto get_pc() -> uint64_t;
+        void set_pc(uint64_t pc);
+        void step_over_breakpoint();
+        void wait_for_signal();
 
         inline void init(void);
         inline auto is_alias(const std::string& input, const std::string& command) -> bool;
