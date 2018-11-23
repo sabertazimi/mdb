@@ -55,7 +55,7 @@ which is encoded as 0xcc to implement software breakpoints.
 
 ## Registers
 
-- defination in `<sys/user.h>`
+- register address/value in `<sys/user.h>`: `struct user_regs_struct`
 - ptrace api: `ptrace(PTRACE_GETREGS, pid, nullptr, &regs);`
 
 ## Reference
