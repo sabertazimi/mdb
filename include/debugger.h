@@ -1,10 +1,12 @@
 #ifndef _MINIDBG_DEBUGGER_H
 #define _MINIDBG_DEBUGGER_H
 
+#include <linux/types.h>
+
 #include <utility>
 #include <string>
 #include <unordered_map>
-#include <linux/types.h>
+
 #include <breakpoint.hpp>
 
 namespace minidbg {

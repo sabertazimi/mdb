@@ -1,8 +1,9 @@
 #ifndef _MINIDBG_BREAKPOINT_HPP
 #define _MINIDBG_BREAKPOINT_HPP
 
-#include <cstdint>
 #include <sys/ptrace.h>
+
+#include <cstdint>
 
 namespace minidbg {
     class BreakPoint {
