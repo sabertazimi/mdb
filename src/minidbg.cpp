@@ -30,6 +30,12 @@ std::vector<std::string> split(const std::string &s, char delimiter) {
     return out;
 }
 
+bool is_suffix(const std::string& s, const std::string& of) {
+    if (s.size() > of.size()) return false;
+    auto diff = of.size() - s.size();
+    return std::equal(s.begin(), s.end(), of.begin() + diff);
+}
+
 void Debugger::run() {
     int wait_status;
     auto options = 0;
