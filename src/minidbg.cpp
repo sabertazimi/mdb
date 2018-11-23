@@ -79,13 +79,6 @@ void Debugger::handle_command(const std::string& line) {
     }
 }
 
-void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
-    std::cout << "Set breakpoint at address 0x" << std::hex << addr << std::endl;
-    BreakPoint bp {m_pid, addr};
-    bp.enable();
-    m_breakpoints[addr] = bp;
-}
-
 void Debugger::dump_registers() {
     for (const auto& rd : g_register_descriptors) {
         std::cout << rd.name << " 0x"
@@ -100,6 +93,27 @@ uint64_t Debugger::read_memory(uint64_t address) {
 
 void Debugger::write_memory(uint64_t address, uint64_t value) {
     ptrace(PTRACE_POKEDATA, m_pid, address, value);
+}
+
+void Debugger::set_breakpoint_at_address(std::intptr_t addr) {
+    std::cout << "Set breakpoint at address 0x" << std::hex << addr << std::endl;
+    BreakPoint bp {m_pid, addr};
+    bp.enable();
+    m_breakpoints[addr] = bp;
+}
+
+void Debugger::single_step_instruction() {
+    ptrace(PTRACE_SINGLESTEP, m_pid, nullptr, nullptr);
+    wait_for_signal();
+}
+
+void Debugger::single_step_instruction_with_breakpoint_check() {
+    // first, check to see if we need to disable and enable a breakpoint
+    if (m_breakpoints.count(get_pc())) {
+        step_over_breakpoint();
+    } else {
+        single_step_instruction();
+    }
 }
 
 void Debugger::continue_execution() {
