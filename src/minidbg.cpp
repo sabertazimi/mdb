@@ -1,15 +1,18 @@
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 
 #include "linenoise.h"
 
-#include "breakpoint.hpp"
 #include "registers.hpp"
 #include "debugger.h"
 
@@ -138,6 +141,37 @@ void Debugger::wait_for_signal() {
     waitpid(m_pid, &wait_status, options);
 }
 
+dwarf::die Debugger::get_function_from_pc(uint64_t pc) {
+    for (auto &cu : m_dwarf.compilation_units()) {
+        if (die_pc_range(cu.root()).contains(pc)) {
+            for (const auto& die : cu.root()) {
+                if (die.tag == dwarf::DW_TAG::subprogram) {
+                    if (die_pc_range(die).contains(pc)) {
+                        return die;
+                    }
+                }
+            }
+        }
+    }
+
+    throw std::out_of_range{"Cannot find function"};
+}
+
+dwarf::line_table::iterator Debugger::get_line_entry_from_pc(uint64_t pc) {
+    for (auto &cu : m_dwarf.compilation_units()) {
+        if (die_pc_range(cu.root()).contains(pc)) {
+            auto &lt = cu.get_line_table();
+            auto it = lt.find_address(pc);
+            if (it == lt.end()) {
+                throw std::out_of_range{"Cannot find line entry"};
+            } else {
+                return it;
+            }
+        }
+    }
+
+    throw std::out_of_range{"Cannot find line entry"};
+}
 
 inline void Debugger::init(void) {
     this->set_alias("c", "continue");

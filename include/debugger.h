@@ -7,8 +7,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "dwarf/dwarf++.hh"
 #include "elf/elf++.hh"
+#include "dwarf/dwarf++.hh"
 
 #include <breakpoint.hpp>
 
@@ -17,6 +17,10 @@ namespace minidbg {
     public:
         Debugger (std::string prog_name, pid_t pid)
             : m_prog_name{std::move(prog_name)}, m_pid{pid} {
+            auto fd = open(m_prog_name.c_str(), O_RDONLY);
+            m_elf = elf::elf{elf::create_mmap_loader(fd)};
+            m_dwarf = dwarf::dwarf{dwarf::elf::create_loader(m_elf)};
+
             this->init();
         }
 
@@ -35,6 +39,11 @@ namespace minidbg {
         void step_over_breakpoint();
         void wait_for_signal();
 
+        void handle_sigtrap(siginfo_t info);
+
+        auto get_function_from_pc(uint64_t pc) -> dwarf::die;
+        auto get_line_entry_from_pc(uint64_t pc) -> dwarf::line_table::iterator;
+
         inline void init(void);
         inline auto is_alias(const std::string& input, const std::string& command) -> bool;
         inline void set_alias(const std::string& input, const std::string& command);
@@ -43,6 +52,9 @@ namespace minidbg {
         pid_t m_pid;
         std::unordered_map<std::string, std::string> m_aliases;
         std::unordered_map<std::intptr_t, BreakPoint> m_breakpoints;
+
+        elf::elf m_elf;
+        dwarf::dwarf m_dwarf;
     };
 }
 
